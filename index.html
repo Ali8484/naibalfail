@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>لعبة المبني للمجهول - السادس الابتدائي</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* منع تحديد النص أثناء اللعب */
+        }
+
+        body {
+            background: linear-gradient(145deg, #10141e 0%, #1a1f2c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Tahoma', 'Cairo', system-ui, -apple-system, sans-serif;
+            padding: 1rem;
+        }
+
+        /* حاوية اللعبة الرئيسية */
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* رأس اللعبة - عنوان رئيسي */
+        .game-header {
+            background: #21417b;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-bottom: 4px solid #ffea9e;
+        }
+
+        .game-header h1 {
+            color: white;
+            font-size: 1.9rem;
+            letter-spacing: -0.5px;
+            text-shadow: 2px 2px 0 #0f2a4f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .game-header h1 span {
+            background: #ffea9e;
+            color: #21417b;
+            font-size: 1.4rem;
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            font-weight: bold;
+        }
+
+        /* لوحة النقاط والمؤشرات */
+        .stats-panel {
+            background: #1e293b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.8rem;
+            color: white;
+            font-weight: bold;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 1px solid #ffea9e33;
+        }
+
+        .score-box, .question-counter {
+            background: #0f172a;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            box-shadow: inset 0 1px 2px #00000030, 0 2px 4px #00000020;
+        }
+
+        .score-box span:first-child, .question-counter span:first-child {
+            color: #ffea9e;
+            margin-left: 8px;
+        }
+
+        .score-value, .counter-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #ffea9e;
+            margin-right: 6px;
+        }
+
+        /* منطقة السؤال */
+        .question-area {
+            background: #fef9e8;
+            margin: 1.8rem 1.5rem;
+            padding: 1.6rem 1rem;
+            border-radius: 2rem;
+            box-shadow: 0 12px 18px -8px rgba(0,0,0,0.3);
+            border: 1px solid #ffea9e;
+        }
+
+        .original-sentence {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e293b;
+            background: #fff6e0;
+            padding: 1rem;
+            border-radius: 1.2rem;
+            margin-bottom: 1.5rem;
+            border-right: 8px solid #21417b;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .original-sentence p {
+            font-size: 0.9rem;
+            color: #21417b;
+            margin-bottom: 8px;
+            font-weight: normal;
+        }
+
+        .instruction {
+            background: #1e293b;
+            color: white;
+            padding: 0.6rem;
+            text-align: center;
+            border-radius: 2rem;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        /* خيارات الاختيارات (الأزرار) */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 1.2rem;
+            padding: 0.9rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: right;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #eef2ff;
+            transform: scale(0.98);
+            border-color: #21417b;
+        }
+
+        .option-btn.correct-highlight {
+            background: #b9f6ca;
+            border-color: #2e7d32;
+            color: #1e3a2f;
+        }
+
+        .option-btn.wrong-highlight {
+            background: #ffcdd2;
+            border-color: #c62828;
+            color: #b71c1c;
+            text-decoration: line-through;
+        }
+
+        .option-btn.disabled-btn {
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .prefix-icon {
+            font-size: 1.3rem;
+        }
+
+        /* زر التالي وإعادة المحاولة */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 0.5rem 1.5rem 1.8rem 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .next-btn, .reset-btn {
+            background: #21417b;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 0.8rem 1.8rem;
+            font-size: 1.1rem;
+            border-radius: 3rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 5px 0 #0f2a4f;
+        }
+
+        .next-btn:active, .reset-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #0f2a4f;
+        }
+
+        .reset-btn {
+            background: #475569;
+            box-shadow: 0 5px 0 #1e293b;
+        }
+
+        .feedback {
+            text-align: center;
+            margin: 0 1.5rem 1rem;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 0.5rem;
+            border-radius: 2rem;
+            background: #e9ecef;
+            color: #0f172a;
+        }
+
+        /* تذييل به أرقام ونقاط */
+        .footer-note {
+            background: #0f172a;
+            text-align: center;
+            padding: 0.8rem;
+            color: #ffea9e;
+            font-size: 0.85rem;
+            border-top: 1px solid #ffea9e33;
+        }
+
+        @media (max-width: 550px) {
+            .original-sentence {
+                font-size: 1.2rem;
+            }
+            .option-btn {
+                font-size: 0.85rem;
+                padding: 0.7rem;
+            }
+            .game-header h1 {
+                font-size: 1.4rem;
+            }
+        }
+
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="game-header">
+        <h1>
+            📖 لعبة المبني للمجهول 🎮
+            <span>سادس ابتدائي</span>
+        </h1>
+    </div>
+    <div class="stats-panel">
+        <div class="score-box">⭐ <span>النقاط:</span> <span class="score-value" id="scoreValue">0</span></div>
+        <div class="question-counter">📋 <span>السؤال:</span> <span class="counter-value" id="qCounter">1</span> / <span id="totalQuestions">4</span></div>
+    </div>
+
+    <div class="question-area" id="questionArea">
+        <div class="original-sentence" id="originalSentence">
+            <p>📝 الجملة الأصلية:</p>
+            <span id="sentenceText">يحفظُ الشرطيُ الأمنَ</span>
+        </div>
+        <div class="instruction">
+            🎯 اختر الجملة الصحيحة بعد حذف الفاعل وبناء الفعل للمجهول مع ضبط نائب الفاعل بالشكل:
+        </div>
+        <div class="options-grid" id="optionsContainer">
+            <!-- الخيارات تظهر ديناميكيا -->
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="next-btn" id="nextBtn">➡ السؤال التالي</button>
+        <button class="reset-btn" id="resetGameBtn">🔄 إعادة اللعبة</button>
+    </div>
+    <div class="feedback" id="feedbackMsg">✨ اختر الإجابة الصحيحة من الخيارات ✨</div>
+    <div class="footer-note">
+        🔹 ركز على حركات الفعل ونائب الفاعل بعد الحذف 🔹
+    </div>
+</div>
+
+<script>
+    // قائمة الأسئلة مع البيانات: الجملة الأصلية، الخيارات (4 خيارات)، index الصحيح (0-based)، بالإضافة إلى التوضيح
+    const questionsData = [
+        {
+            original: "يحفظُ الشرطيُ الأمنَ",
+            options: [
+                "يُحْفَظُ الأَمْنُ",
+                "يُحْفَظُ الشرطي",
+                "يَحْفِظُ الأَمْنُ",
+                "يُحْفَظُ الأَمْنَ"
+            ],
+            correct: 0,   // يُحْفَظُ الأَمْنُ (نائب فاعل مرفوع بالضمة)
+            explanation: "الفاعل (الشرطي) حُذف، والفعل يُبنى للمجهول: يُحْفَظُ، ونائب الفاعل (الأمن) مرفوع بالضمة."
+        },
+        {
+            original: "يكرمُ التلميذُ المجدُ",
+            options: [
+                "يُكْرَمُ الْمُجِدُّ",
+                "يُكْرِمُ الْمُجِدَّ",
+                "يُكْرَمُ التلميذُ",
+                "يُكْرَمُ الْمُجِدَ"
+            ],
+            correct: 0,   // يُكْرَمُ الْمُجِدُّ (نائب فاعل مرفوع)
+            explanation: "حذفنا (التلميذ) الفاعل، والفعل (يكرم) يصبح (يُكْرَمُ) والمجد نائب فاعل مرفوع بالضمة."
+        },
+        {
+            original: "يفتتحُ المهرجانُ صباحا",
+            options: [
+                "يُفْتَتَحُ الْمَهْرَجَانُ صباحًا",
+                "يُفْتَتِحُ الْمَهْرَجَانُ صباحًا",
+                "يُفْتَتَحُ المهرجانَ صباحًا",
+                "يُفْتَتَحُ الْمَهْرَجَانُ صباحَ"
+            ],
+            correct: 0,   // يُفْتَتَحُ الْمَهْرَجَانُ صباحًا (نائب فاعل مرفوع)
+            explanation: "الفعل المبني للمجهول (يُفْتَتَحُ) ونائب الفاعل (المهرجان) مرفوع بالضمة، والظرف صباحًا كما هو."
+        },
+        {
+            original: "عوقبَ المهملُ على تقصيره",
+            options: [
+                "عُوقِبَ الْمُهْمَلُ عَلَى تَقْصِيرِهِ",
+                "عُوقِبَ الْمُهْمِلُ عَلَى تَقْصِيرِهِ",
+                "عُوقِبَ الْمُهْمَلَ عَلَى تَقْصِيرِهِ",
+                "عُوقِبَ الْمُهْمَلُ عَنْ تَقْصِيرِهِ"
+            ],
+            correct: 0,   // هي أصلاً للمجهول، نائب فاعل (المهمل) مرفوع بالضمة
+            explanation: "الجملة أصلاً للمجهول، (المهمل) نائب فاعل مرفوع بالضمة، ويبقى (على تقصيره) كما هو."
+        }
+    ];
+
+    // متغيرات اللعبة
+    let currentQuestionIndex = 0;        // 0-based
+    let score = 0;
+    let answered = false;                // هل تم الإجابة على السؤال الحالي؟
+    let selectedOptionIndex = -1;        // لتجنب تكرار التصويت
+
+    // عناصر DOM
+    const sentenceTextSpan = document.getElementById("sentenceText");
+    const optionsContainer = document.getElementById("optionsContainer");
+    const scoreValueSpan = document.getElementById("scoreValue");
+    const qCounterSpan = document.getElementById("qCounter");
+    const totalQuestionsSpan = document.getElementById("totalQuestions");
+    const nextBtn = document.getElementById("nextBtn");
+    const resetBtn = document.getElementById("resetGameBtn");
+    const feedbackMsgDiv = document.getElementById("feedbackMsg");
+
+    // أصوات (Web Audio API - نغمات بسيطة بدون ملفات خارجية)
+    function playSound(type) {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            let frequency = 0;
+            let duration = 0.25;
+            if (type === 'correct') {
+                frequency = 880; // A5 نغمة صحيحة
+                duration = 0.3;
+                gainNode.gain.value = 0.3;
+                oscillator.frequency.value = frequency;
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + duration);
+                // نغمة ثانية سريعة
+                setTimeout(() => {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.type = 'sine';
+                    osc2.frequency.value = 1046.5;
+                    gain2.gain.value = 0.2;
+                    osc2.start();
+                    osc2.stop(audioCtx.currentTime + 0.2);
+                }, 50);
+            } else if (type === 'wrong') {
+                frequency = 220; // A3 نغمة خطأ
+                duration = 0.4;
+                gainNode.gain.value = 0.25;
+                oscillator.frequency.value = frequency;
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + duration);
+                // نغمة هبوط
+                setTimeout(() => {
+                    const osc3 = audioCtx.createOscillator();
+                    const gain3 = audioCtx.createGain();
+                    osc3.connect(gain3);
+                    gain3.connect(audioCtx.destination);
+                    osc3.type = 'sawtooth';
+                    osc3.frequency.value = 164.8;
+                    gain3.gain.value = 0.2;
+                    osc3.start();
+                    osc3.stop(audioCtx.currentTime + 0.3);
+                }, 100);
+            } else if (type === 'click') {
+                // صوت زر خفيف
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.value = 523.25;
+                gain.gain.value = 0.1;
+                osc.type = 'triangle';
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            }
+            // السماح بتشغيل AudioContext بعد تفاعل المستخدم (يتم عند أول نقرة)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        } catch(e) {
+            console.log("Web Audio API not supported or error");
+        }
+    }
+
+    // وظيفة لتحديث واجهة السؤال الحالي
+    function loadQuestion() {
+        answered = false;
+        selectedOptionIndex = -1;
+        const qData = questionsData[currentQuestionIndex];
+        sentenceTextSpan.innerText = qData.original;
+        // إنشاء أزرار الخيارات
+        optionsContainer.innerHTML = "";
+        qData.options.forEach((opt, idx) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            // إضافة أيقونة صغيرة
+            const iconSpan = document.createElement("span");
+            iconSpan.className = "prefix-icon";
+            iconSpan.innerText = String.fromCharCode(65 + idx) + " . "; // A. B. C. D.
+            const textSpan = document.createElement("span");
+            textSpan.innerText = opt;
+            btn.appendChild(iconSpan);
+            btn.appendChild(textSpan);
+            btn.setAttribute("data-opt-index", idx);
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (!answered) {
+                    handleAnswer(idx);
+                } else {
+                    playSound('click');
+                    feedbackMsgDiv.innerText = "⚠️ لقد أجبت على هذا السؤال مسبقًا! انتقل للسؤال التالي.";
+                }
+            });
+            optionsContainer.appendChild(btn);
+        });
+        // إعادة تعيين رسالة التغذية
+        feedbackMsgDiv.innerHTML = "🔍 اختر الإجابة الصحيحة مع مراعاة الضبط الصحيح (الحركات) 🔍";
+        // تفعيل الأزرار (إزالة أي حالة تعطيل أو تلوين)
+        enableOptions(true);
+    }
+
+    // تمكين/تعطيل الأزرار وإعادة ألوانها
+    function enableOptions(enable) {
+        const btns = document.querySelectorAll(".option-btn");
+        btns.forEach(btn => {
+            if (enable) {
+                btn.classList.remove("disabled-btn", "correct-highlight", "wrong-highlight");
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+                btn.classList.add("disabled-btn");
+            }
+        });
+    }
+
+    // معالجة الإجابة
+    function handleAnswer(selectedIdx) {
+        if (answered) return;
+        const currentQ = questionsData[currentQuestionIndex];
+        const isCorrect = (selectedIdx === currentQ.correct);
+        // تحديث النقاط
+        if (isCorrect) {
+            score += 10;
+            scoreValueSpan.innerText = score;
+            feedbackMsgDiv.innerHTML = `✅ إجابة صحيحة! ✅ ${currentQ.explanation}`;
+            playSound('correct');
+        } else {
+            feedbackMsgDiv.innerHTML = `❌ إجابة خاطئة! الإجابة الصحيحة هي: ${currentQ.options[currentQ.correct]} .<br> 📘 ${currentQ.explanation}`;
+            playSound('wrong');
+        }
+        answered = true;
+        selectedOptionIndex = selectedIdx;
+        // تلوين الأزرار: الأخضر للصحيح، الأحمر للخاطئ المختار
+        const btns = document.querySelectorAll(".option-btn");
+        btns.forEach((btn, idx) => {
+            btn.disabled = true;
+            btn.classList.add("disabled-btn");
+            if (idx === currentQ.correct) {
+                btn.classList.add("correct-highlight");
+            }
+            if (idx === selectedIdx && idx !== currentQ.correct) {
+                btn.classList.add("wrong-highlight");
+            }
+        });
+        // تحديث عداد النقاط ثانية
+        scoreValueSpan.innerText = score;
+    }
+
+    // الانتقال للسؤال التالي
+    function nextQuestion() {
+        if (!answered && currentQuestionIndex < questionsData.length) {
+            playSound('click');
+            feedbackMsgDiv.innerHTML = "⚠️ يجب عليك الإجابة على السؤال أولاً قبل الانتقال!";
+            return;
+        }
+        if (currentQuestionIndex + 1 < questionsData.length) {
+            currentQuestionIndex++;
+            loadQuestion();
+            updateCounters();
+            playSound('click');
+        } else {
+            // نهاية اللعبة
+            playSound('click');
+            feedbackMsgDiv.innerHTML = `🎉🎊 أكملت اللعبة! 🎊🎉 <br> نتيجتك النهائية: ${score} من ${questionsData.length * 10} ✨`;
+            // تعطيل زر التالي واظهار رسالة انتهاء
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = "0.6";
+            nextBtn.style.cursor = "default";
+            // لكن يمكن إعادة اللعبة
+        }
+        if (currentQuestionIndex === questionsData.length - 1 && answered && currentQuestionIndex+1 === questionsData.length) {
+            // إذا كان السؤال الأخير وتمت الإجابة وضغطنا التالي ولم يعد هناك أسئلة
+            if (currentQuestionIndex + 1 === questionsData.length) {
+                // لا مزيد
+            }
+        }
+    }
+
+    // تحديث أرقام الأسئلة
+    function updateCounters() {
+        qCounterSpan.innerText = currentQuestionIndex + 1;
+    }
+
+    // إعادة ضبط اللعبة بالكامل
+    function resetGame() {
+        playSound('click');
+        currentQuestionIndex = 0;
+        score = 0;
+        answered = false;
+        selectedOptionIndex = -1;
+        scoreValueSpan.innerText = "0";
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = "1";
+        nextBtn.style.cursor = "pointer";
+        loadQuestion();
+        updateCounters();
+        feedbackMsgDiv.innerHTML = "🔄 تم إعادة اللعبة! حظاً موفقاً 🔄";
+        // إعادة تعيين المتغيرات
+    }
+
+    // التهيئة العامة
+    function initGame() {
+        totalQuestionsSpan.innerText = questionsData.length;
+        resetGame(); // تحميل السؤال الأول وإعداد كل شيء
+        // إضافة مستمعي الأزرار
+        nextBtn.onclick = () => nextQuestion();
+        resetBtn.onclick = () => resetGame();
+    }
+
+    // بدء اللعبة مع تفعيل AudioContext بعد أول تفاعل بشري (أي زر)
+    function enableAudioOnFirstInteraction() {
+        const resumeAudio = () => {
+            if (window.AudioContext || window.webkitAudioContext) {
+                const testCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (testCtx.state === 'suspended') {
+                    testCtx.resume();
+                }
+            }
+            document.body.removeEventListener('click', resumeAudio);
+            document.body.removeEventListener('touchstart', resumeAudio);
+        };
+        document.body.addEventListener('click', resumeAudio);
+        document.body.addEventListener('touchstart', resumeAudio);
+    }
+
+    initGame();
+    enableAudioOnFirstInteraction();
+</script>
+</body>
+</html>
